@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MAKEUPBYZAKIE — Form Booking & Jadwal Klien</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-obsidian: #0d0d0f;
+      --bg-card: #16161a;
+      --bg-input: #1f1f24;
+      --accent-mustard: #e6b83a;
+      --accent-mustard-hover: #f3c647;
+      --border-subtle: rgba(230, 184, 58, 0.22);
+    }
+    body {
+      background-color: var(--bg-obsidian);
+      color: #f4f4f5;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .font-display {
+      font-family: 'Cormorant Garamond', serif;
+    }
+    .card-surface {
+      background: linear-gradient(145deg, #18181d 0%, #121215 100%);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.75);
+    }
+    .input-field {
+      background-color: var(--bg-input);
+      border: 1px solid #2e2e36;
+      color: #ffffff;
+      transition: all 0.2s ease;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent-mustard);
+      box-shadow: 0 0 0 3px rgba(230, 184, 58, 0.16);
+    }
+    .btn-mustard {
+      background: linear-gradient(135deg, #e6b83a 0%, #cfa025 100%);
+      color: #0d0d0f;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+    .btn-mustard:hover {
+      background: linear-gradient(135deg, #f3c647 0%, #dca928 100%);
+      transform: translateY(-1px);
+    }
+    .btn-mustard:active {
+      transform: translateY(0);
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator,
+    input[type="time"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.85) sepia(0.5) saturate(3) hue-rotate(5deg);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-[#e6b83a] selection:text-black">
+
+  <!-- Header -->
+  <header class="border-b border-white/10 bg-[#0d0d0f]/90 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
+      <div>
+        <p class="text-[10px] tracking-[0.28em] uppercase text-[#e6b83a] font-semibold">Private Makeup Artist</p>
+        <h1 class="font-display text-2xl sm:text-3xl font-bold tracking-wide text-white">MAKEUPBYZAKIE</h1>
+      </div>
+
+      <!-- Admin Controls (Hidden in ?mode=client) -->
+      <div id="adminControls" class="flex items-center gap-2">
+        <button id="copyClientLinkBtn" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#e6b83a]/15 text-[#e6b83a] border border-[#e6b83a]/40 hover:bg-[#e6b83a] hover:text-black transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+          </svg>
+          <span>Salin Link Client</span>
+        </button>
+        <button id="toggleScheduleBtn" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white/5 text-zinc-300 border border-white/10 hover:border-white/25 transition">
+          Jadwal (<span id="bookingCount">0</span>)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden items-center gap-2 px-4 py-2.5 rounded-full bg-[#e6b83a] text-black text-xs font-bold shadow-2xl">
+    <span id="toastText">Tersalin!</span>
+  </div>
+
+  <!-- Main Content -->
+  <main class="max-w-3xl w-full mx-auto px-4 py-8 flex-1">
+    
+    <!-- Booking Form Section -->
+    <section id="bookingSection" class="card-surface rounded-2xl p-6 sm:p-8">
+      <div class="mb-6 border-b border-white/10 pb-5">
+        <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#e6b83a]/15 text-[#e6b83a] mb-2">
+          Reservasi & Konfirmasi Jadwal
+        </span>
+        <h2 class="font-display text-2xl sm:text-3xl font-bold text-white">Form Booking Makeup</h2>
+        <p class="text-xs sm:text-sm text-zinc-400 mt-1">
+          Silakan lengkapi data di bawah ini untuk mengunci jadwal dan menghitung waktu mulai makeup secara otomatis.
+        </p>
+      </div>
+
+      <form id="bookingForm" class="space-y-5">
+        <!-- Client Info -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Nama Lengkap Klien *</label>
+            <input type="text" id="clientName" required placeholder="Contoh: Kak Nabila" class="input-field w-full rounded-xl px-3.5 py-2.5 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Nomor WhatsApp *</label>
+            <input type="tel" id="clientWa" required placeholder="Contoh: 081234567890" class="input-field w-full rounded-xl px-3.5 py-2.5 text-sm" />
+          </div>
+        </div>
+
+        <!-- Date & Event Time -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Tanggal Acara *</label>
+            <input type="date" id="eventDate" required class="input-field w-full rounded-xl px-3.5 py-2.5 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Jam Siap / Mulai Acara *</label>
+            <input type="time" id="readyTime" required value="08:00" class="input-field w-full rounded-xl px-3.5 py-2.5 text-sm" />
+          </div>
+        </div>
+
+        <!-- Service Category & Pax -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Kategori Layanan Makeup *</label>
+            <select id="serviceType" class="input-field w-full rounded-xl px-3.5 py-2.5 text-sm">
+              <option value="wisuda" data-price="350000" data-duration="90">Wisuda / Graduation — Rp 350.000 (1,5 Jam)</option>
+              <option value="party" data-price="400000" data-duration="90">Party / Bridesmaid / Kondangan — Rp 400.000 (1,5 Jam)</option>
+              <option value="lamaran" data-price="650000" data-duration="120">Lamaran / Engagement — Rp 650.000 (2 Jam)</option>
+              <option value="prewed" data-price="750000" data-duration="120">Prewedding — Rp 750.000 (2 Jam)</option>
+              <option value="akad" data-price="1500000" data-duration="180">Akad Nikah / Resepsi Pengantin — Rp 1.500.000 (3 Jam)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Jumlah Orang (Pax)</label>
+            <input type="number" id="paxCount" min="1" max="15" value="1" class="input-field w-full rounded-xl px-3.5 py-2.5 text-sm" />
+          </div>
+        </div>
+
+        <!-- Location & Notes -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Alamat Lengkap / Lokasi Makeup *</label>
+          <textarea id="location" rows="2" required placeholder="Nama jalan, nomor rumah, kelurahan/kecamatan, atau patokan lokasi" class="input-field w-full rounded-xl px-3.5 py-2.5 text-sm"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300 mb-1.5">Catatan Tambahan (Opsional)</label>
+          <input type="text" id="notes" placeholder="Contoh: Hijab do / Hair do, jenis kulit sensitif, dll." class="input-field w-full rounded-xl px-3.5 py-2.5 text-sm" />
+        </div>
+
+        <!-- Live Calculation Summary Box -->
+        <div class="rounded-2xl bg-[#101013] border border-[#e6b83a]/30 p-4 sm:p-5 space-y-3">
+          <div class="flex items-center justify-between text-xs text-zinc-400">
+            <span>Estimasi Jam Mulai Makeup (MUA Tiba)</span>
+            <span id="calcStartTime" class="text-base font-bold text-[#e6b83a]">06:30 WIB</span>
+          </div>
+          <div class="flex items-center justify-between text-xs text-zinc-400">
+            <span>Total Biaya Layanan</span>
+            <span id="calcTotal" class="text-sm font-semibold text-white">Rp 350.000</span>
+          </div>
+          <div class="flex items-center justify-between text-xs text-zinc-400 border-t border-white/10 pt-2.5">
+            <span>Minimal DP (30% Kunci Jadwal)</span>
+            <span id="calcDp" class="text-sm font-bold text-[#e6b83a]">Rp 105.000</span>
+          </div>
+        </div>
+
+        <!-- Payment Account Box -->
+        <div class="rounded-2xl bg-[#e6b83a]/10 border border-[#e6b83a]/35 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <p class="text-[11px] uppercase tracking-wider text-[#e6b83a] font-bold">Rekening Pembayaran Resmi</p>
+            <p class="text-sm sm:text-base font-bold text-white mt-0.5">Bank BCA: <span class="tracking-wider">0880563831</span></p>
+            <p class="text-xs text-zinc-300">a/n <span class="font-semibold">Mohammad Zaki Furqoni</span></p>
+          </div>
+          <button type="button" id="copyRekBtn" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#e6b83a] text-black hover:bg-[#f3c647] transition self-start sm:self-center">
+            Salin No. Rekening
+          </button>
+        </div>
+
+        <!-- Submit & Direct WhatsApp Action -->
+        <div class="pt-2 flex flex-col sm:flex-row gap-3">
+          <button type="submit" class="btn-mustard flex-1 py-3.5 px-5 rounded-xl text-sm shadow-lg">
+            Simpan & Buat Ringkasan Booking
+          </button>
+        </div>
+      </form>
+
+      <!-- Result Confirmation Card (Shown after submit) -->
+      <div id="resultCard" class="hidden mt-6 rounded-2xl bg-[#111114] border border-emerald-500/40 p-5 space-y-4">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Data Booking Siap Dikirim</h3>
+        </div>
+        <pre id="summaryPreview" class="text-xs text-zinc-200 whitespace-pre-wrap font-sans bg-black/40 p-3.5 rounded-xl border border-white/10 leading-relaxed"></pre>
+        <div class="flex flex-col sm:flex-row gap-2.5">
+          <button type="button" id="copySummaryBtn" class="flex-1 py-3 px-4 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 text-white border border-white/15 transition">
+            Salin Teks Ringkasan
+          </button>
+          <a id="sendWaLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-mustard flex-1 py-3 px-4 rounded-xl text-xs text-center flex items-center justify-center gap-2">
+            <span>Kirim Langsung ke WhatsApp MUA</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Admin Schedule List Section (Hidden in ?mode=client) -->
+    <section id="scheduleSection" class="hidden card-surface rounded-2xl p-6 sm:p-8">
+      <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-5">
+        <div>
+          <h2 class="font-display text-2xl font-bold text-white">Daftar Jadwal Tersimpan</h2>
+          <p class="text-xs text-zinc-400">Tersimpan otomatis di perangkat ini</p>
+        </div>
+        <button id="backToFormBtn" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#e6b83a] text-black">
+          + Form Baru
+        </button>
+      </div>
+      <div id="scheduleList" class="space-y-3"></div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/10 py-5 text-center text-xs text-zinc-500">
+    &copy; 2026 MAKEUPBYZAKIE &bull; Reservasi & Konfirmasi Jadwal Klien
+  </footer>
+
+  <script>
+    const MUA_WA_NUMBER = "6281326260000"; // Ganti dengan nomor WA lengkap MUA jika perlu
+    const STORAGE_KEY = "makeupbyzakie_bookings_v1";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const isClientMode = urlParams.get("mode") === "client";
+
+    const adminControls = document.getElementById("adminControls");
+    const bookingSection = document.getElementById("bookingSection");
+    const scheduleSection = document.getElementById("scheduleSection");
+
+    if (isClientMode && adminControls) {
+      adminControls.style.display = "none";
+    }
+
+    // Set default date to today
+    const eventDateInput = document.getElementById("eventDate");
+    const todayStr = new Date().toISOString().split("T")[0];
+    eventDateInput.value = todayStr;
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      const toastText = document.getElementById("toastText");
+      toastText.textContent = msg;
+      toast.classList.remove("hidden");
+      toast.classList.add("flex");
+      setTimeout(() => {
+        toast.classList.add("hidden");
+        toast.classList.remove("flex");
+      }, 2600);
+    }
+
+    function formatRupiah(num) {
+      return "Rp " + Number(num).toLocaleString("id-ID");
+    }
+
+    function calculateEstimate() {
+      const readyTimeVal = document.getElementById("readyTime").value || "08:00";
+      const serviceSelect = document.getElementById("serviceType");
+      const selectedOpt = serviceSelect.options[serviceSelect.selectedIndex];
+      const pricePerPax = Number(selectedOpt.dataset.price || 350000);
+      const durationMins = Number(selectedOpt.dataset.duration || 90);
+      const pax = Math.max(1, Number(document.getElementById("paxCount").value || 1));
+
+      const totalDuration = durationMins + (pax - 1) * 45;
+      const [hh, mm] = readyTimeVal.split(":").map(Number);
+      let startTotalMins = hh * 60 + mm - totalDuration;
+      if (startTotalMins < 0) startTotalMins += 24 * 60;
+
+      const startH = String(Math.floor(startTotalMins / 60)).padStart(2, "0");
+      const startM = String(startTotalMins % 60).padStart(2, "0");
+
+      const totalPrice = pricePerPax * pax;
+      const dpPrice = Math.round(totalPrice * 0.3);
+
+      document.getElementById("calcStartTime").textContent = `${startH}:${startM} WIB`;
+      document.getElementById("calcTotal").textContent = formatRupiah(totalPrice);
+      document.getElementById("calcDp").textContent = formatRupiah(dpPrice);
+
+      return {
+        startTime: `${startH}:${startM} WIB`,
+        totalPrice,
+        dpPrice,
+        serviceLabel: selectedOpt.textContent.split("—")[0].trim()
+      };
+    }
+
+    ["readyTime", "serviceType", "paxCount"].forEach(id => {
+      document.getElementById(id).addEventListener("change", calculateEstimate);
+      document.getElementById(id).addEventListener("input", calculateEstimate);
+    });
+    calculateEstimate();
+
+    // Copy Rekening
+    document.getElementById("copyRekBtn").addEventListener("click", () => {
+      navigator.clipboard.writeText("0880563831").then(() => {
+        showToast("No. Rekening BCA 0880563831 tersalin!");
+      });
+    });
+
+    // Copy Client Link (Admin)
+    const copyClientLinkBtn = document.getElementById("copyClientLinkBtn");
+    if (copyClientLinkBtn) {
+      copyClientLinkBtn.addEventListener("click", () => {
+        const cleanBase = window.location.origin + window.location.pathname;
+        const clientUrl = `${cleanBase}?mode=client`;
+        navigator.clipboard.writeText(clientUrl).then(() => {
+          showToast("Link khusus klien (?mode=client) tersalin!");
+        });
+      });
+    }
+
+    // LocalStorage Schedule Helpers
+    function getBookings() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveBooking(entry) {
+      const list = getBookings();
+      list.unshift(entry);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      updateBookingCount();
+    }
+
+    function updateBookingCount() {
+      const countEl = document.getElementById("bookingCount");
+      if (countEl) countEl.textContent = getBookings().length;
+    }
+    updateBookingCount();
+
+    function renderSchedule() {
+      const list = getBookings();
+      const container = document.getElementById("scheduleList");
+      if (!list.length) {
+        container.innerHTML = `<p class="text-sm text-zinc-400 text-center py-8">Belum ada data booking tersimpan di perangkat ini.</p>`;
+        return;
+      }
+      container.innerHTML = list.map((item, idx) => `
+        <div class="rounded-xl bg-[#101013] border border-white/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-white text-sm">${item.clientName}</span>
+              <span class="text-[11px] px-2 py-0.5 rounded-full bg-[#e6b83a]/15 text-[#e6b83a] font-semibold">${item.serviceLabel} (${item.pax} pax)</span>
+            </div>
+            <p class="text-xs text-zinc-400">Tanggal: <strong class="text-zinc-200">${item.eventDate}</strong> &bull; Mulai Makeup: <strong class="text-[#e6b83a]">${item.startTime}</strong> (Siap ${item.readyTime})</p>
+            <p class="text-xs text-zinc-400">Lokasi: ${item.location}</p>
+            <p class="text-xs text-zinc-300">Total: <strong>${formatRupiah(item.totalPrice)}</strong> &bull; DP 30%: <strong class="text-[#e6b83a]">${formatRupiah(item.dpPrice)}</strong></p>
+          </div>
+          <button type="button" onclick="deleteBooking(${idx})" class="text-xs text-rose-400 hover:text-rose-300 self-end sm:self-center px-2.5 py-1.5 rounded-lg border border-rose-500/25">
+            Hapus
+          </button>
+        </div>
+      `).join("");
+    }
+
+    window.deleteBooking = function(idx) {
+      const list = getBookings();
+      list.splice(idx, 1);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      updateBookingCount();
+      renderSchedule();
+      showToast("Jadwal dihapus");
+    };
+
+    const toggleScheduleBtn = document.getElementById("toggleScheduleBtn");
+    const backToFormBtn = document.getElementById("backToFormBtn");
+    if (toggleScheduleBtn) {
+      toggleScheduleBtn.addEventListener("click", () => {
+        bookingSection.classList.add("hidden");
+        scheduleSection.classList.remove("hidden");
+        renderSchedule();
+      });
+    }
+    if (backToFormBtn) {
+      backToFormBtn.addEventListener("click", () => {
+        scheduleSection.classList.add("hidden");
+        bookingSection.classList.remove("hidden");
+      });
+    }
+
+    // Form Submit
+    document.getElementById("bookingForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const est = calculateEstimate();
+      const clientName = document.getElementById("clientName").value.trim();
+      const clientWa = document.getElementById("clientWa").value.trim();
+      const eventDate = document.getElementById("eventDate").value;
+      const readyTime = document.getElementById("readyTime").value;
+      const pax = Math.max(1, Number(document.getElementById("paxCount").value || 1));
+      const location = document.getElementById("location").value.trim();
+      const notes = document.getElementById("notes").value.trim() || "-";
+
+      const bookingEntry = {
+        clientName,
+        clientWa,
+        eventDate,
+        readyTime,
+        startTime: est.startTime,
+        serviceLabel: est.serviceLabel,
+        pax,
+        location,
+        notes,
+        totalPrice: est.totalPrice,
+        dpPrice: est.dpPrice
+      };
+
+      saveBooking(bookingEntry);
+
+      const summaryText =
+`Halo Kak Zaki! Saya ingin konfirmasi booking *MAKEUPBYZAKIE*:
+
+• *Nama:* ${clientName}
+• *No. WA:* ${clientWa}
+• *Tanggal Acara:* ${eventDate}
+• *Jam Siap Acara:* ${readyTime} WIB
+• *Estimasi Mulai Makeup:* ${est.startTime}
+• *Layanan:* ${est.serviceLabel} (${pax} orang)
+• *Lokasi:* ${location}
+• *Catatan:* ${notes}
+
+• *Total Biaya:* ${formatRupiah(est.totalPrice)}
+• *Minimal DP (30%):* ${formatRupiah(est.dpPrice)}
+• *Rekening Transfer:* BCA 0880563831 a/n Mohammad Zaki Furqoni
+
+Berikut saya lampirkan bukti transfernya ya Kak. Terima kasih!`;
+
+      document.getElementById("summaryPreview").textContent = summaryText;
+      const resultCard = document.getElementById("resultCard");
+      resultCard.classList.remove("hidden");
+      resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(summaryText)}`;
+      document.getElementById("sendWaLink").href = waUrl;
+
+      document.getElementById("copySummaryBtn").onclick = () => {
+        navigator.clipboard.writeText(summaryText).then(() => {
+          showToast("Ringkasan booking tersalin!");
+        });
+      };
+
+      showToast("Form booking berhasil dibuat!");
+    });
+  </script>
+</body>
+</html>
